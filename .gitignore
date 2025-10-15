@@ -1,0 +1,32 @@
+# Binaries
+/bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Environment variables
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Dependencies
+/vendor/
+
+# Build
+*.test
+*.out
+
+# OS-specific
+.DS_Store
+Thumbs.db 

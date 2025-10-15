@@ -1,0 +1,206 @@
+basePath: /api/v1
+definitions:
+  models.OperationCreateResponse:
+    properties:
+      message:
+        type: string
+      operationId:
+        type: string
+      status:
+        type: string
+    type: object
+  models.OperationStatusResponse:
+    properties:
+      amount:
+        type: integer
+      error:
+        type: string
+      operationId:
+        type: string
+      operationType:
+        type: string
+      processedAt:
+        type: string
+      status:
+        type: string
+      walletId:
+        type: string
+    type: object
+  models.WalletBalanceResponse:
+    properties:
+      balance:
+        type: integer
+      walletId:
+        type: string
+    type: object
+  models.WalletCreateResponse:
+    properties:
+      balance:
+        type: integer
+      message:
+        type: string
+      status:
+        type: string
+      walletId:
+        type: string
+    type: object
+  models.WalletOperationRequest:
+    properties:
+      amount:
+        type: integer
+      operationType:
+        enum:
+        - DEPOSIT
+        - WITHDRAW
+        type: string
+      walletId:
+        type: string
+    required:
+    - amount
+    - operationType
+    - walletId
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: This is a sample server for a wallet service.
+  title: Wallet API
+  version: "1.0"
+paths:
+  /wallet:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new deposit or withdraw operation for a wallet
+      parameters:
+      - description: Operation Request
+        in: body
+        name: operation
+        required: true
+        schema:
+          $ref: '#/definitions/models.WalletOperationRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/models.OperationCreateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create a wallet operation (deposit/withdraw)
+      tags:
+      - operations
+  /wallets:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new wallet with an initial balance of 0
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.WalletCreateResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create a new wallet
+      tags:
+      - wallets
+  /wallets/{walletId}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the current balance of a wallet by its ID
+      parameters:
+      - description: Wallet ID (UUIDv4)
+        in: path
+        name: walletId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.WalletBalanceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get wallet balance
+      tags:
+      - wallets
+  /wallets/{walletId}/operations/{operationId}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the status of a specific operation for a wallet
+      parameters:
+      - description: Wallet ID (UUIDv4)
+        in: path
+        name: walletId
+        required: true
+        type: string
+      - description: Operation ID (UUIDv4)
+        in: path
+        name: operationId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.OperationStatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get operation status
+      tags:
+      - operations
+schemes:
+- http
+swagger: "2.0"

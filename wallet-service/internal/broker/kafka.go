@@ -13,6 +13,7 @@ func NewKafkaWriter(cfg config.KafkaConfig) (*kafka.Writer, error) {
 		Balancer:     &kafka.Hash{},    // Use hash balancer to guarantee order
 		RequiredAcks: kafka.RequireOne, // Wait for acknowledgement from leader
 		Async:        false,            // Synchronous writing for reliability
+		MaxAttempts:  10,
 	}
 
 	return writer, nil

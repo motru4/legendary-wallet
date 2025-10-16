@@ -50,7 +50,6 @@ func NewWallet(mux *http.ServeMux, walletService *services.WalletService) *Walle
 func (h *Wallet) getWallet(w http.ResponseWriter, r *http.Request) {
 	walletID := r.PathValue("walletId")
 
-	// Валидация UUID
 	if err := h.validate.Var(walletID, "required,uuid4"); err != nil {
 		h.writeError(w, http.StatusBadRequest, "Invalid wallet ID format")
 		return
@@ -82,7 +81,6 @@ func (h *Wallet) getWallet(w http.ResponseWriter, r *http.Request) {
 func (h *Wallet) createWallet(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Создаем кошелек с автоматической генерацией ID
 	wallet, err := h.walletService.CreateWallet(ctx)
 	if err != nil {
 		h.writeError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to create wallet: %v", err))
@@ -118,7 +116,6 @@ func (h *Wallet) getOperation(w http.ResponseWriter, r *http.Request) {
 	walletID := r.PathValue("walletId")
 	operationID := r.PathValue("operationId")
 
-	// Валидация UUID
 	if err := h.validate.Var(walletID, "required,uuid4"); err != nil {
 		h.writeError(w, http.StatusBadRequest, "Invalid wallet ID format")
 		return
@@ -165,19 +162,16 @@ func (h *Wallet) createOperation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Валидация входных данных
 	if err := h.validate.Struct(req); err != nil {
 		h.writeError(w, http.StatusBadRequest, fmt.Sprintf("Validation error: %v", err))
 		return
 	}
 
-	// Проверка допустимых типов операций
 	if req.OperationType != models.OperationTypeDeposit && req.OperationType != models.OperationTypeWithdraw {
 		h.writeError(w, http.StatusBadRequest, "OperationType must be DEPOSIT or WITHDRAW")
 		return
 	}
 
-	// Проверка положительной суммы
 	if req.Amount <= 0 {
 		h.writeError(w, http.StatusBadRequest, "Amount must be positive")
 		return
@@ -205,7 +199,6 @@ func (h *Wallet) createOperation(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// Вспомогательная функция для отправки ошибок
 func (h *Wallet) writeError(w http.ResponseWriter, statusCode int, message string) {
 	errorResponse := map[string]interface{}{
 		"error":   http.StatusText(statusCode),

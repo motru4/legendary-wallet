@@ -1,31 +1,27 @@
+# 💸 Legendary Wallet 
+
+High-load wallet system: a REST API for receiving operations and a background worker for asynchronous processing via Kafka, with transactional persistence in PostgreSQL and caching in Redis.
+Special focus - **correctness under 1000 RPS per wallet**, strict ordering, and idempotency.
+
+## 🔧 Tech Stack
+
+![Go](https://img.shields.io/badge/Go-00ADD8?logo=go\&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?logo=postgresql\&logoColor=white)
+![Kafka](https://img.shields.io/badge/Kafka-231F20?logo=apachekafka\&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?logo=redis\&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker\&logoColor=white)
+![Swagger](https://img.shields.io/badge/Swagger-85EA2D?logo=swagger\&logoColor=black)
 
 ---
 
-# 💸 Legendary Wallet (API + Operation Worker)
-
-
-Высоконагруженная система кошельков: REST-API для приёма операций и воркер для асинхронной обработки через Kafka с транзакционной записью в PostgreSQL и кэшированием в Redis. Особое внимание — корректности под 1000 RPS на один кошелёк, строгому порядку и идемпотентности.
-
-## 🔧 Стек
-
-![Go](https://img.shields.io/badge/Go-00ADD8?logo=go&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?logo=postgresql&logoColor=white)
-![Kafka](https://img.shields.io/badge/Kafka-231F20?logo=apachekafka&logoColor=white)
-![Redis](https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
-![Swagger](https://img.shields.io/badge/Swagger-85EA2D?logo=swagger&logoColor=black)
-
-
----
-
-## 📁 Структура репозитория
+## 📁 Repository Structure
 
 ```
 │  .env                 
 │  docker-compose.yml   
 │  LICENSE
 │
-├─ migrations/          
+├─ migrations/          # SQL initialization of DB (initdb or migrator)
 │    001_init.sql
 │
 ├─ operation-worker/
@@ -53,51 +49,68 @@
 
 ---
 
-## 🚀 Быстрый старт
+## 🚀 Quick Start
 
-### 1) Настроить переменные окружения
-Создай файл `.env` в корне проекта на основе файла `config.env`
+### 1) Configure environment variables
 
-### 2) Поднять систему
+Create a `.env` file in the project root based on `config.env`.
+
+### 2) Launch the system
 
 ```bash
 docker compose up --build
 ```
 
 ---
+## 🔍 Useful Dev Tools
 
-## 🌐 API
-
-### Роуты
-
-```go
-POST /api/v1/wallets                          // создать новый кошелёк
-GET  /api/v1/wallets/{walletId}               // получить баланс
-POST /api/v1/wallet                           // создать операцию (DEPOSIT/WITHDRAW)
-GET  /api/v1/wallets/{walletId}/operations/{operationId} // статус операции
-
-GET  /swagger/ ...                            // Swagger UI
-```
-
-## 🧵 Поток обработки (Kafka) и конкуррентность
-
-* По количеству **партиций** создаются читателей Kafka - каждый в своей горутине.
-* Каждые **100ms** батчер забирает накопившиеся сообщения и **группирует по `walletId`**.
-* Для каждого кошелька сервисный слой:
-
-  1. В транзакции `SELECT ... FOR UPDATE` блокирует строку кошелька.
-  2. Получает список операций из БД и **пропускает уже обработанные** (идемпотентность, случай рестарта).
-  3. Последовательно применяет операции **в порядке Kafka**:
-
-     * `DEPOSIT` — увеличивает баланс
-     * `WITHDRAW` — проверяет достаточность средств; при нехватке — `FAILED` с причиной
-  4. Массово обновляет статусы операций, обновляет баланс, коммитит транзакцию.
-  5. Обновляет кэш в Redis и **коммитит оффсет** в Kafka.
-* Доставка из Kafka — **at-least-once**. Идемпотентность и проверка статусов дают поведение «как exactly-once» на уровне домена.
+| Tool                                                                                                          | URL                                                            | Description                                       |
+| ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------- |
+| ![Swagger](https://img.shields.io/badge/Swagger-85EA2D?logo=swagger\&logoColor=black)         | [http://localhost:8080/swagger](http://localhost:8080/swagger) | REST API documentation                            |
+| ![Kafka](https://img.shields.io/badge/Kafdrop-231F20?logo=apachekafka\&logoColor=white)        | [http://localhost:9000](http://localhost:9000)                 | Web UI for Kafka topics, partitions, and messages |
+| ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?logo=postgresql\&logoColor=white) | `localhost:5432`                                               | Primary transactional database                    |
+| ![Redis](https://img.shields.io/badge/Redis-DC382D?logo=redis\&logoColor=white)                      | `localhost:6379`                                               | Cache and fast lookup store                       |              |
 
 ---
 
-## 🧭 Диаграмма архитектуры (Mermaid)
+## 🌐 API
+
+### Routes
+
+```go
+POST /api/v1/wallets                                      // create a new wallet
+GET  /api/v1/wallets/{walletId}                           // get wallet balance
+POST /api/v1/wallet                                       // create operation (DEPOSIT/WITHDRAW)
+GET  /api/v1/wallets/{walletId}/operations/{operationId}  // get operation status
+
+GET  /swagger/index.html                                  // Swagger UI
+```
+
+---
+
+## 🧵 Processing Flow (Kafka) and Concurrency
+
+* The number of Kafka **partitions** defines the number of consumer goroutines.
+* Every **100ms**, the batcher collects accumulated messages and **groups them by `walletId`**.
+* For each wallet, the service layer:
+
+  1. Locks the wallet row using a `SELECT ... FOR UPDATE` inside a transaction.
+
+  2. Fetches the list of operations from DB and **skips already processed ones** (idempotency, restart safety).
+
+  3. Applies new operations **in Kafka order**:
+
+     * `DEPOSIT` — increases balance
+     * `WITHDRAW` — checks funds; if insufficient → marks as `FAILED` with reason
+
+  4. Bulk updates operation statuses, updates the wallet balance, and commits the transaction.
+
+  5. Updates the Redis cache and **commits the Kafka offset**.
+* Kafka delivery is **at-least-once**. Combined with idempotency and status checks, it provides **domain-level exactly-once** behavior.
+
+---
+
+## 🧭 Architecture Diagram (Mermaid)
 
 ```mermaid
 flowchart LR
@@ -153,10 +166,6 @@ flowchart LR
 ```
 
 ---
-
-
-
-
 
 
 

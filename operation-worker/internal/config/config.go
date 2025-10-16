@@ -70,7 +70,7 @@ func New() *Config {
 		Worker: WorkerConfig{
 			ProcessingInterval: func(pi string) time.Duration {
 				processingInterval, _ := strconv.Atoi(pi)
-				return time.Duration(processingInterval) * time.Second
+				return time.Duration(processingInterval) * time.Millisecond
 			}(os.Getenv("WORKER_PROCESSING_INTERVAL")),
 		},
 	}

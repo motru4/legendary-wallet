@@ -1,18 +1,20 @@
 
 ---
 
-# Legendary Wallet (API + Operation Worker)
+# 💸 Legendary Wallet (API + Operation Worker)
+
 
 Высоконагруженная система кошельков: REST-API для приёма операций и воркер для асинхронной обработки через Kafka с транзакционной записью в PostgreSQL и кэшированием в Redis. Особое внимание — корректности под 1000 RPS на один кошелёк, строгому порядку и идемпотентности.
 
 ## 🔧 Стек
 
-* **Golang**
-* **PostgreSQL** 
-* **Kafka** 
-* **Redis** 
-* **Docker / docker-compose**
-* **Swagger/OpenAPI** 
+![Go](https://img.shields.io/badge/Go-00ADD8?logo=go&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?logo=postgresql&logoColor=white)
+![Kafka](https://img.shields.io/badge/Kafka-231F20?logo=apachekafka&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
+![Swagger](https://img.shields.io/badge/Swagger-85EA2D?logo=swagger&logoColor=black)
+
 
 ---
 

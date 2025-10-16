@@ -21,7 +21,7 @@ Special focus - **correctness under 1000 RPS per wallet**, strict ordering, and 
 │  docker-compose.yml   
 │  LICENSE
 │
-├─ migrations/          # SQL initialization of DB (initdb or migrator)
+├─ migrations/          
 │    001_init.sql
 │
 ├─ operation-worker/

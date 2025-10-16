@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"operation-worker/internal/models"
+	"strings"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -104,30 +105,45 @@ func (r *TxWalletRepo) BulkUpdateOperations(ctx context.Context, operations []mo
 	return nil
 }
 
-func (r *TxWalletRepo) updateBatch(ctx context.Context, operations []models.WalletOperation) error {
-	query := `
-		UPDATE wallet_operations 
-		SET status = :status, processed_at = :processed_at, error = :error
-		WHERE id = :id AND wallet_id = :wallet_id
-	`
-
-	// Preparing data for mass update
-	updateData := make([]map[string]interface{}, len(operations))
-	for i, op := range operations {
-		updateData[i] = map[string]interface{}{
-			"id":           op.ID,
-			"wallet_id":    op.WalletID,
-			"status":       op.Status,
-			"processed_at": op.ProcessedAt,
-			"error":        op.Error,
-		}
+func (r *TxWalletRepo) updateBatch(ctx context.Context, ops []models.WalletOperation) error {
+	if len(ops) == 0 {
+		return nil
 	}
 
-	// Perform a bulk update
-	_, err := r.tx.NamedExecContext(ctx, query, updateData)
-	if err != nil {
-		return fmt.Errorf("failed to execute batch update: %w", err)
+	args := make([]interface{}, 0, 5*len(ops))
+	values := make([]string, 0, len(ops))
+
+	for i, op := range ops {
+		base := i*5 + 1
+		values = append(values,
+			fmt.Sprintf("($%d::uuid,$%d::uuid,$%d::text,$%d::timestamptz,$%d::text)",
+				base, base+1, base+2, base+3, base+4,
+			),
+		)
+
+		args = append(args,
+			op.ID,
+			op.WalletID,
+			op.Status,
+			op.ProcessedAt,
+			op.Error,
+		)
 	}
 
+	query := fmt.Sprintf(`
+		UPDATE wallet_operations AS w
+		SET
+			status = v.status,
+			processed_at = v.processed_at,
+			error = v.error
+		FROM (VALUES
+			%s
+		) AS v(id, wallet_id, status, processed_at, error)
+		WHERE w.id = v.id AND w.wallet_id = v.wallet_id
+	`, strings.Join(values, ","))
+
+	if _, err := r.tx.ExecContext(ctx, query, args...); err != nil {
+		return fmt.Errorf("bulk UPDATE FROM VALUES failed: %w", err)
+	}
 	return nil
 }

@@ -68,7 +68,7 @@ docker compose up --build
 | ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------- |
 | ![Swagger](https://img.shields.io/badge/Swagger-85EA2D?logo=swagger\&logoColor=black)         | [http://localhost:8080/swagger](http://localhost:8080/swagger) | REST API documentation                            |
 | ![Kafka](https://img.shields.io/badge/Kafdrop-231F20?logo=apachekafka\&logoColor=white)        | [http://localhost:9000](http://localhost:9000)                 | Web UI for Kafka topics, partitions, and messages |
-| ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?logo=postgresql\&logoColor=white) | `localhost:5432`                                               | Primary transactional database                    |
+| ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?logo=postgresql\&logoColor=white) | `localhost:5435`                                               | Primary transactional database                    |
 | ![Redis](https://img.shields.io/badge/Redis-DC382D?logo=redis\&logoColor=white)                      | `localhost:6379`                                               | Cache and fast lookup store                       |              |
 
 ---
